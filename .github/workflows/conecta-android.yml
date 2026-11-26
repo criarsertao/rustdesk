@@ -273,3 +273,27 @@ jobs:
         with:
           name: ConectaCliente-${{ matrix.job.arch }}
           path: signed-apk/*.apk
+
+      - name: Compilar Conecta Controle (celular do técnico)
+        shell: bash
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+        run: |
+          export PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH
+          bash conecta/variante-tecnico.sh
+          case ${{ matrix.job.target }} in
+            aarch64-linux-android) PLAT=android-arm64; ABI=arm64-v8a ;;
+            armv7-linux-androideabi) PLAT=android-arm; ABI=armeabi-v7a ;;
+            x86_64-linux-android) PLAT=android-x64; ABI=x86_64 ;;
+          esac
+          pushd flutter
+          flutter build apk --release --target-platform $PLAT --split-per-abi
+          popd
+          mkdir -p tecnico-apk
+          mv flutter/build/app/outputs/flutter-apk/app-$ABI-release.apk tecnico-apk/ConectaControle-${{ matrix.job.arch }}.apk
+
+      - name: Enviar APK do técnico
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ConectaControle-${{ matrix.job.arch }}
+          path: tecnico-apk/*.apk
